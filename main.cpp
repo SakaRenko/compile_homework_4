@@ -2,9 +2,10 @@
 // Created by YangYuqi on 2020/11/17.
 //
 
-//#include"main.tab.hh"
+#include"main.tab.hh"
 #include"common.h"
 #include<iostream>
+#include<fstream>
 using std::cout;
 using std::endl;
 int TreeNode::count = 0;
@@ -15,18 +16,18 @@ void setfield(TreeNode * now, field * cur)
 {
     if(now->type == VAR)
     {
-        VarNode * var = now;
+        VarNode * var = (VarNode *)now;
         var->def = cur;
     }
     if(now->type == STMT)
     {
-        StmtNode * st = now;
+        StmtNode * st = (StmtNode *)now;
         if(st->stmt == "Set the new Field")
         {
             cur = infield(cur);
         }
     }
-    TreeNode::LinkNode begin = now->sons;
+    TreeNode::LinkNode *begin = now->sons;
     while(begin != NULL)
     {
         setfield(begin->node, cur);
@@ -34,7 +35,7 @@ void setfield(TreeNode * now, field * cur)
     }
     if(now->type == STMT)
     {
-        StmtNode * st = now;
+        StmtNode * st = (StmtNode *)now;
         if(st->stmt == "Set the new Field")
         {
             cur = outfield(cur);
@@ -44,13 +45,12 @@ void setfield(TreeNode * now, field * cur)
 
 int main ()
 {
-   yyparse();
-   if(root){
-       setfield(root, rootf);
-        root->printnode();
+    yyparse();
+    if(root){
+        setfield(root, rootf);
         root->printAST();
-   }
-
+    }
+}
 int yyerror(char const* message)
 {
     cout << message << endl;

@@ -1,4 +1,4 @@
-#include<tree.h>
+#include"tree.h"
 #include<iostream>
 
 using namespace std;
@@ -42,10 +42,10 @@ void TreeNode::printsons()
 void TreeNode::printAST()
 {
     this->printnode();
-    LinkNode * now = sons;
+    LinkNode * now = this->sons;
     while(now != NULL)
     {
-        now->printAST();
+        now->node->printAST();
         now = now->next;
     }
 }
@@ -56,7 +56,7 @@ void VarNode::printnode()
     cout<<"Constant Variable\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
     else
     cout<<"Variable\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
-    cout<<"\tchildren:";
+    cout<<"\tChildren:";
     this->printsons();
 }
 
@@ -66,7 +66,7 @@ void ArrayNode::printnode()
     cout<<"Constant Array\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
     else
     cout<<"Array\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
-    cout<<"\tchildren:";
+    cout<<"\tChildren:";
     this->printsons();
 }
 

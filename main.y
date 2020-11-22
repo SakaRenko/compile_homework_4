@@ -8,7 +8,7 @@
 
 %start program
 
-%token ID INTEGER CHAR STRING
+%token ID INTEGER STRING
 %token IF ELSE WHILE FOR RETURN
 %token CHAR INT VOID
 %token COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK SEMICOLON
@@ -21,7 +21,7 @@
 
 %token MAIN
 
-%right ASSIGN
+%right ASSIGN MASSIGN AASSIGN
 %left OR
 %left AND
 %left EQUAL LESS MORE
@@ -33,11 +33,11 @@
 %nonassoc ELSE 
 %%
 program
-    : VOID MAIN LBRACE statements RBRACE{root=new StmtNode("main function");root->addChild($4);}
+    : VOID MAIN LPAREN RPAREN LBRACE statements RBRACE{root=new StmtNode("Main function", 0);root->addson($6);}
     ;
 statements
     : statement {$$=$1;}
-    | statements statement{$$=$1;$$->sibling = $2;}
+    | statement statements{$1->sibling = $2;$$=$1;}
     ;
 statement
     : declare {$$=$1;}
@@ -47,6 +47,12 @@ statement
     | for {$$=$1;}
     | printf SEMICOLON {$$=$1;}
     | scanf SEMICOLON {$$=$1;}
+    | RETURN expr SEMICOLON {
+        TreeNode *node = new StmtNode("Return", false);
+        node->addson($2);
+        $$=node;
+    }
+    | SEMICOLON {}
     ;
 fieldstatement
     : statement {
@@ -84,16 +90,14 @@ while
     }
     ;
 for
-    : FOR LPAREN statement bool_statment statement RPAREN fieldstatement{
+    : FOR LPAREN instruction SEMICOLON bool_expr SEMICOLON instruction RPAREN fieldstatement{
         TreeNode *node = new StmtNode("FOR", 0);
         node->addson($3);
-        node->addson($4);
         node->addson($5);
+        node->addson($7);
+        node->addson($9);
         $$ = node;
     }
-    ;
-bool_statment
-    : bool_expr SEMICOLON {$$=$1;}
     ;
 declare
     : type instructions SEMICOLON{
@@ -111,7 +115,7 @@ assign
     }
     ;
 instructions
-    : instructions COMMA instruction {$$ = $1; $$->sibling = $2;}
+    : instruction COMMA instructions {$1->sibling = $3;$$=$1;}
     | instruction {$$ = $1;}
     ;
 instruction
@@ -121,13 +125,24 @@ instruction
         node->addson($3);
         $$=node;  
     }
+    | ID MASSIGN expr {
+        TreeNode *node=new ExprNode("-=");
+        node->addson($1);
+        node->addson($3);
+        $$=node;  
+    }
+    | ID AASSIGN expr {
+        TreeNode *node=new ExprNode("+=");
+        node->addson($1);
+        node->addson($3);
+        $$=node;  
+    }
     | ID {$$ = $1;}
     | expr{$$=$1;}
     ;
 string
     : STRING {
-        TreeNode * node = new ArrayNode(yytext, 0);
-        $$=node;
+        $$=$1;
     }
     ;
 printf
@@ -190,7 +205,7 @@ bool_expr
         $$=node;
     }
     | NOT bool_expr {
-        TreeNode *node=new TreeNode("!");
+        TreeNode *node=new ExprNode("!");
         node->addson($2);
         $$=node; 
     }
@@ -228,7 +243,7 @@ expr
         node->addson($3);
         $$=node;   
     }
-    | MINUS expr %prec UMINS {
+    | MINUS expr %prec UMINUS {
         TreeNode *node=new ExprNode("-");
         node->addson($2);
         $$=node;   

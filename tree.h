@@ -29,7 +29,7 @@ class TreeNode
         TreeNode * sibling;
         TreeNode(NodeType type);
         void addson(TreeNode * son);
-        void printnode();
+        virtual void printnode(){};
         void printsons();
         void printAST();
 };
@@ -65,7 +65,7 @@ class TypeNode: public TreeNode
 {
     public:
         string type;
-        ExprNode(string t):TreeNode(TYPE)
+        TypeNode(string t):TreeNode(TYPE)
         {
             type = t;
         };

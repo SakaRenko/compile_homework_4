@@ -1,27 +1,28 @@
 %option noyywrap
 %{
     #include"common.h"
+    #include"main.tab.hh"
 %}
-
 INTEGER [0-9]+
 ID [[:alpha:]_][[:alpha:][:digit:]_]*
 
+endcomment "*/"
 EOL (\r\n|\n)
 WHITE [\t ]
-STRING "[^"]"
+STRING \"[^\"]*\"
+commentelement .|\n
+linecommentelement .
 %x COMMENT
 %x LINECOMMENT
-commentelement . | \n
-linecommentelement .
 %%
 
 "/*" BEGIN COMMENT;
-<COMMENT> {commentelement}
-<COMMENT> "*/" BEGIN INITIAL;
+<COMMENT>{commentelement} 
+<COMMENT>{endcomment} {BEGIN INITIAL;}
 
 "//" BEGIN LINECOMMENT;
-<LINECOMMENT> {linecommentelement}
-<LINECOMMENT> {EOL} {BEGIN INITIAL;}
+<LINECOMMENT>{linecommentelement} 
+<LINECOMMENT>{EOL} {BEGIN INITIAL;}
 
 "true" {
     TreeNode *node = new VarNode("1", 1);
@@ -40,7 +41,6 @@ linecommentelement .
 
 "main" return MAIN;
 
-""
 
 "if" return IF;
 "while" return WHILE;
@@ -52,6 +52,8 @@ linecommentelement .
 "scanf" return SCANF;
 
 "=" return ASSIGN;
+"-=" return MASSIGN;
+"+=" return AASSIGN;
 
 "+" return ADD;
 "-" return MINUS;
@@ -89,7 +91,12 @@ linecommentelement .
     yylval = node;
     return ID;
 }
-{STRING} return STRING;
+{STRING} {
+    printf(yytext);
+    TreeNode * node = new ArrayNode(yytext, 1);
+    yylval = node;
+    return STRING;
+}
 {EOL}
 {WHITE}
 
