@@ -87,12 +87,11 @@ linecommentelement .
     return INTEGER;
 }
 {ID} {
-    TreeNode *node = new VarNode(yytext, true);
+    TreeNode *node = new VarNode(yytext, false);
     yylval = node;
     return ID;
 }
 {STRING} {
-    printf(yytext);
     TreeNode * node = new ArrayNode(yytext, 1);
     yylval = node;
     return STRING;

@@ -108,24 +108,24 @@ declare
     }
     ;
 assign
-    : instructions SEMICOLON{
+    : notdeinstructions SEMICOLON{
         TreeNode *node = new StmtNode("ASSIGN", 0);
         node->addson($1);
         $$ = node;
     }
     ;
+notdeinstructions
+    : notdeinstruction COMMA notdeinstructions {$1->sibling = $3;$$=$1;}
+    | notdeinstruction {$$ = $1;}
+    | instruction COMMA notdeinstructions {$1->sibling = $3;$$=$1;}
+    | instruction {$$ = $1;}
+    ;
 instructions
     : instruction COMMA instructions {$1->sibling = $3;$$=$1;}
     | instruction {$$ = $1;}
     ;
-instruction
-    : ID ASSIGN expr {
-        TreeNode *node=new ExprNode("=");
-        node->addson($1);
-        node->addson($3);
-        $$=node;  
-    }
-    | ID MASSIGN expr {
+notdeinstruction
+    :ID MASSIGN expr {
         TreeNode *node=new ExprNode("-=");
         node->addson($1);
         node->addson($3);
@@ -137,8 +137,16 @@ instruction
         node->addson($3);
         $$=node;  
     }
-    | ID {$$ = $1;}
     | expr{$$=$1;}
+    ;
+instruction
+    : ID ASSIGN expr {
+        TreeNode *node=new ExprNode("=");
+        node->addson($1);
+        node->addson($3);
+        $$=node;  
+    }
+    | ID {$$ = $1;}
     ;
 string
     : STRING {

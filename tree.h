@@ -45,18 +45,19 @@ class field
 
 field * infield(field * cur);
 field * outfield(field * cur);
+bool checkfield(field * tar, field * cur);
 
 class VarNode: public TreeNode
 {
     public:
         string name;
         bool ifconst;
-        field * def;
+        int def;
         VarNode(string n, bool c):TreeNode(VAR)
         {
             name = n;
             ifconst = c;
-            def = NULL;
+            def = -1;
         };
         void printnode();
 };
@@ -64,10 +65,10 @@ class VarNode: public TreeNode
 class TypeNode: public TreeNode
 {
     public:
-        string type;
+        string t;
         TypeNode(string t):TreeNode(TYPE)
         {
-            type = t;
+            this->t = t;
         };
         void printnode();
 };
@@ -102,11 +103,11 @@ class ArrayNode: public TreeNode
     public:
         string name;
         bool ifconst;
-        field * def;
+        int def;
         ArrayNode(string n, bool i):TreeNode(ARRAY)
         {
             name = n;
-            def = NULL;
+            def = -1;
             ifconst = i;
         };
         void printnode();

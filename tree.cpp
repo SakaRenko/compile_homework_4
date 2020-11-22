@@ -52,26 +52,29 @@ void TreeNode::printAST()
 
 void VarNode::printnode()
 {
+    cout<<nodenum<<"\t";
     if(this->ifconst)
-    cout<<"Constant Variable\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
+    cout<<"Constant Variable\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
     else
-    cout<<"Variable\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
+    cout<<"Variable\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
     cout<<"\tChildren:";
     this->printsons();
 }
 
 void ArrayNode::printnode()
 {
+    cout<<nodenum<<"\t";
     if(this->ifconst)
-    cout<<"Constant Array\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
+    cout<<"Constant Array\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
     else
-    cout<<"Array\t"<<"symbol:"<<this->name<<"\tat field:"<<this->def;
+    cout<<"Array\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
     cout<<"\tChildren:";
     this->printsons();
 }
 
 void TypeNode::printnode()
 {
+    cout<<nodenum<<"\t";
     cout<<"Type Indication\top:"<<this->type<<"\tChildren:";
     this->printsons();
 }
@@ -79,12 +82,14 @@ void TypeNode::printnode()
 
 void ExprNode::printnode()
 {
+    cout<<nodenum<<"\t";
     cout<<"Expression\top:"<<this->op<<"\tChildren:";
     this->printsons();
 }
 
 void StmtNode::printnode()
 {
+    cout<<nodenum<<"\t";
     cout<<"Statement:"<<this->stmt<<"\tChildren";
     this->printsons();
 }
@@ -92,10 +97,23 @@ void StmtNode::printnode()
 field * infield(field * cur)
 {
     cur->next[cur->count] = new field();
+    cur->next[cur->count]->fa = cur;
     return cur->next[cur->count++];
 }
 
 field * outfield(field * cur)
 {
     return cur->fa;
+}
+
+bool checkfield(field *tar, field *cur)
+{
+    field *now = cur;
+    while(now != NULL)
+    {
+        if(tar == now)
+            return true;
+        now = now->fa;
+    }
+    return false;
 }
