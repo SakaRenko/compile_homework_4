@@ -13,9 +13,31 @@ TreeNode *root=nullptr;
 field * rootf = new field();
 
 const int MAXN = 100000;
+
+
+struct MyType
+{
+    string name;
+    bool isarray;
+    int len;
+    MyType(string name, int len, bool isarray)
+    {
+        this->name = name;
+        this->len = len;
+        this->isarray = isarray;
+    }
+    MyType()
+    {
+        this->name = "";
+        this->len = 0;
+        this->isarray = false;
+    }
+};
+
+
 struct sign{
     string name;
-    string type;
+    MyType type;
     field * def;
 }signlist[MAXN];
 int signcount = 0;
@@ -32,7 +54,7 @@ int findsign(string name, field *cur)
     return now;
 }
 
-void addsign(string name, field *cur, string type)
+void addsign(string name, field *cur, MyType type)
 {
     signlist[signcount].name = name;
     signlist[signcount].def = cur;
@@ -42,22 +64,23 @@ void addsign(string name, field *cur, string type)
 
 void delcaresign(StmtNode * destmt, field *cur)
 {
-    TreeNode::LinkNode * link = destmt->sons;
-    string type = "";
+    TreeNode * now = destmt->sons;
+    MyType type;
     TypeNode *t;
     VarNode *var;
     ExprNode *exp;
-    while(link != NULL)
+    while(now != NULL)
     {
-        TreeNode * now = link->node;
         switch(now->type)
         {
             case TYPE:
                 t = (TypeNode *)now;
-                type = t->t;
+                type.name = t->t;
                 break;
             case VAR:
                 var = (VarNode *)now;
+                type.isarray = var->ifarray;
+                type.len = var->length;
                 addsign(var->name, cur, type);
                 break;
             case EXPR:
@@ -65,11 +88,105 @@ void delcaresign(StmtNode * destmt, field *cur)
                 if(exp->op == "=")
                 {
                     var = (VarNode *)(now->sons);
+                    type.isarray = var->ifarray;
+                    type.len = var->length;
                     addsign(var->name, cur, type);
                 }
                 break;
         };
-        link = link->next;
+        now = now->sibling;
+    }
+}
+
+
+struct StructMem
+{
+    string name;
+    MyType type;
+    StructMem *next;
+    StructMem(string name, string type, int len, bool isarray)
+    {
+        this->name = name;
+        this->type = MyType(type, len, isarray);
+        next = NULL;
+    }
+};
+
+StructMem *altype[MAXN];
+StructMem *alfunc[MAXN];
+int countstruct = 0;
+int countfunc = 0;
+
+void setfunc(StmtNode *funcdec)
+{
+    TreeNode * memdec = funcdec->sons;
+    string type = "";
+    TypeNode *t;
+    VarNode *var, *na;
+    string curtype;
+    var = (VarNode *)memdec;
+    memdec = memdec->sibling;
+    na = (VarNode *)memdec;
+    StructMem *struc = new StructMem(na->name, var->name, var->length, var->ifarray);
+    alfunc[countfunc++] = struc;
+    memdec = memdec->sibling;
+    while(memdec != NULL)
+    {
+        StmtNode * st = (StmtNode *)memdec;
+        if(st->stmt == "FUNCST")
+            break;
+        TreeNode * now = memdec->sons;
+        while(now != NULL)
+        {
+            switch(now->type)
+            {
+                case TYPE:
+                    t = (TypeNode *)now;
+                    curtype = t->t;
+                    break;
+                case VAR:
+                    var = (VarNode *)now;
+                    struc->next = new StructMem(var->name, curtype, var->length, var->ifarray);
+                    struc = struc->next;
+                    break;
+            };
+            now = now->sibling;
+        }
+        memdec = memdec->sibling;
+    }
+}
+
+void settype(StmtNode *strucdec)
+{
+    TreeNode * memdec = strucdec->sons;
+    string type = "";
+    TypeNode *t;
+    VarNode *var;
+    string curtype;
+    var = (VarNode *)memdec;
+    StructMem *struc = new StructMem(var->name, var->name, var->length, var->ifarray);
+    altype[countstruct++] = struc;
+    memdec = memdec->sibling;
+    while(memdec != NULL)
+    {
+        TreeNode * now = memdec->sons;
+        while(now != NULL)
+        {
+            switch(now->type)
+            {
+                case TYPE:
+                    t = (TypeNode *)now;
+                    curtype = t->t;
+                    break;
+                case VAR:
+                    var = (VarNode *)now;
+                    struc->next = new StructMem(var->name, curtype, var->length, var->ifarray);
+                    struc = struc->next;
+                    break;
+            };
+            now = now->sibling;
+        }
+        memdec = memdec->sibling;
     }
 }
 
@@ -84,26 +201,34 @@ void setfield(TreeNode * now, field * cur)
     if(now->type == STMT)
     {
         StmtNode * st = (StmtNode *)now;
-        if(st->stmt == "Set the new Field")
+        if(st->newfield)
             cur = infield(cur);
-        else if(st->stmt == "DECLARE")
+        if(st->stmt == "DECLARE")
             delcaresign(st, cur);
+        else if(st->stmt == "TYPEDECLARE")
+            settype(st);
+        else if(st->stmt == "FUNCDEC")
+        {
+            setfunc(st);
+            delcaresign(st, cur);
+        }
     }
-    TreeNode::LinkNode *begin = now->sons;
+    TreeNode *begin = now->sons;
     while(begin != NULL)
     {
-        setfield(begin->node, cur);
-        begin = begin->next;
+        setfield(begin, cur);
+        begin = begin->sibling;
     }
     if(now->type == STMT)
     {
         StmtNode * st = (StmtNode *)now;
-        if(st->stmt == "Set the new Field")
+        if(st->newfield)
         {
             cur = outfield(cur);
         }
     }
 }
+
 
 int main ()
 {

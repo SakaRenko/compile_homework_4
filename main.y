@@ -18,23 +18,31 @@
 %token NOT AND OR EQUAL LESS MORE LESSE MOREE
 %token PRINTF SCANF
 %token UMINUS UADD
+%token MASSIGN AASSIGN
+%token STRUCT
 
-%token MAIN
-
-%right ASSIGN MASSIGN AASSIGN
 %left OR
 %left AND
 %left EQUAL LESS MORE
 %left LESSE MOREE
-%left PLUS MINUS
+%right NOT 
+%left ADD MINUS
 %left TIMES DEVIDE MOD
-%right NOT UMINUS UADD
+%right UMINUS UADD
+%left LBRACK RBRACK
+%left POINT
 %nonassoc LOWER_THEN_ELSE
 %nonassoc ELSE 
 %%
 program
-    : VOID MAIN LPAREN RPAREN LBRACE statements RBRACE{root=new StmtNode("Main function", 0);root->addson($6);}
+    : decs{root=new StmtNode("PROGRAM", 0);root->addson($1);}
     ;
+decs
+    : dec{$$=$1;}
+    | dec decs{$1->sibling = $2;$$=$1;}
+dec 
+    : typedeclare{$$=$1;}
+    | funcdec{$$=$1;}
 statements
     : statement {$$=$1;}
     | statement statements{$1->sibling = $2;$$=$1;}
@@ -117,27 +125,31 @@ assign
 notdeinstructions
     : notdeinstruction COMMA notdeinstructions {$1->sibling = $3;$$=$1;}
     | notdeinstruction {$$ = $1;}
-    | instruction COMMA notdeinstructions {$1->sibling = $3;$$=$1;}
-    | instruction {$$ = $1;}
     ;
 instructions
     : instruction COMMA instructions {$1->sibling = $3;$$=$1;}
     | instruction {$$ = $1;}
     ;
 notdeinstruction
-    :ID MASSIGN expr {
+    :lval MASSIGN expr {
         TreeNode *node=new ExprNode("-=");
         node->addson($1);
         node->addson($3);
         $$=node;  
     }
-    | ID AASSIGN expr {
+    | lval AASSIGN expr {
         TreeNode *node=new ExprNode("+=");
         node->addson($1);
         node->addson($3);
         $$=node;  
     }
-    | expr{$$=$1;}
+    |lval ASSIGN expr {
+        TreeNode *node=new ExprNode("=");
+        node->addson($1);
+        node->addson($3);
+        $$=node;  
+    }
+    | lval {$$ = $1;}
     ;
 instruction
     : ID ASSIGN expr {
@@ -147,6 +159,14 @@ instruction
         $$=node;  
     }
     | ID {$$ = $1;}
+    | ID LBRACK INTEGER RBRACK{
+        VarNode * i = (VarNode *)$1;
+        VarNode * num = (VarNode *)$3;
+        VarNode *node = new VarNode(i->name, false);
+        node->ifarray = true;
+        node->length = stoi(num->name);
+        $$ = node;
+    }
     ;
 string
     : STRING {
@@ -154,14 +174,26 @@ string
     }
     ;
 printf
-    : PRINTF LPAREN string RPAREN {
+    : PRINTF LPAREN string COMMA notdeinstructions RPAREN {
+        TreeNode *node=new StmtNode("printf", 0);
+        node->addson($3);
+        node->addson($5);
+        $$=node;
+    }
+    | PRINTF LPAREN string RPAREN {
         TreeNode *node=new StmtNode("printf", 0);
         node->addson($3);
         $$=node;
     }
     ;
 scanf
-    : SCANF LPAREN string RPAREN {
+    : SCANF LPAREN string COMMA notdeinstructions RPAREN {
+        TreeNode *node=new StmtNode("scanf", 0);
+        node->addson($3);
+        node->addson($5);
+        $$=node;
+    }
+    | SCANF LPAREN string RPAREN {
         TreeNode *node=new StmtNode("scanf", 0);
         node->addson($3);
         $$=node;
@@ -170,6 +202,10 @@ scanf
 bool_expr
     : TRUE {$$=$1;}
     | FALSE {$$=$1;}
+    | LPAREN bool_expr RPAREN
+    {
+        $$ = $2;
+    }
     | expr EQUAL expr {
         TreeNode *node=new ExprNode("==");
         node->addson($1);
@@ -218,20 +254,46 @@ bool_expr
         $$=node; 
     }
     ;
-expr
-    : ID {$$=$1;}
-    | INTEGER {$$=$1;}
-    | expr ADD expr {
-        TreeNode *node=new ExprNode("+");
+lval
+    :
+    ID{$$=$1;}
+    | ID LBRACK expr RBRACK
+    {
+        TreeNode *node = new ExprNode("[]");
         node->addson($1);
         node->addson($3);
-        $$=node;   
+        $$ = node;
     }
-    | expr MINUS expr {
-        TreeNode *node=new ExprNode("-");
+    | ID POINT ID{
+        TreeNode *node=new ExprNode(".");
         node->addson($1);
         node->addson($3);
-        $$=node;   
+        $$=node; 
+    }
+    ;
+realp
+    : expr{$$=$1;}
+    | expr COMMA realp{
+        $1->sibling = $3;
+        $$ = $1;
+    }
+expr
+    : lval {$$=$1;}
+    | INTEGER {$$=$1;}
+    | ID LPAREN realp RPAREN{
+        VarNode * i = (VarNode *)$1;
+        TreeNode *node = new ExprNode(i->name);
+        node->addson($3);
+        $$ = node;
+    }
+    | ID LPAREN RPAREN{
+        VarNode * i = (VarNode *)$1;
+        TreeNode *node = new ExprNode(i->name);
+        $$ = node;
+    }
+    | LPAREN expr RPAREN
+    {
+        $$ = $2;
     }
     | expr TIMES expr {
         TreeNode *node=new ExprNode("*");
@@ -247,6 +309,18 @@ expr
     }
     | expr MOD expr {
         TreeNode *node=new ExprNode("%");
+        node->addson($1);
+        node->addson($3);
+        $$=node;   
+    }
+    | expr ADD expr {
+        TreeNode *node=new ExprNode("+");
+        node->addson($1);
+        node->addson($3);
+        $$=node;   
+    }
+    | expr MINUS expr {
+        TreeNode *node=new ExprNode("-");
         node->addson($1);
         node->addson($3);
         $$=node;   
@@ -275,6 +349,103 @@ type
         TreeNode *node=new TypeNode("char");
         $$=node;        
     }
+    | STRUCT ID{
+        VarNode * var = (VarNode *)$2;
+        TreeNode *node = new TypeNode(var->name);
+        $$ = node;
+    }
     ;
-
+typedeclare
+    : STRUCT ID LBRACE strdeclares RBRACE SEMICOLON{
+        TreeNode *node = new StmtNode("TYPEDECLARE", 0);
+        node->addson($2);
+        node->addson($4);
+        $$ = node;
+    }  
+    ;
+strdeclares
+    :strdeclare{
+        $$ = $1;
+    }
+    | strdeclare strdeclares
+    {
+        $$ = $1;
+        $1->sibling = $2;
+    }
+    ;
+strdeclare
+    :type idlist SEMICOLON
+    {
+        TreeNode *node = new StmtNode("DECLARE MEMBERS", 0);
+        node->addson($1);
+        node->addson($2);
+        $$ = node;
+    }
+    ;
+idlist 
+    :ID
+    {
+        $$ = $1;
+    }
+    | ID COMMA idlist
+    {
+        $1->sibling = $3;
+        $$ = $1;
+    }
+    | ID LBRACK INTEGER RBRACK
+    {
+        VarNode * i = (VarNode *)$1;
+        VarNode * num = (VarNode *)$3;
+        VarNode *node = new VarNode(i->name, false);
+        node->ifarray = true;
+        node->length = stoi(num->name);
+        $$ = node;
+    }
+    | ID LBRACK INTEGER RBRACK COMMA idlist
+    {
+        VarNode * i = (VarNode *)$1;
+        VarNode * num = (VarNode *)$3;
+        VarNode *node = new VarNode(i->name, false);
+        node->ifarray = true;
+        node->length = stoi(num->name);
+        node->sibling = $6;
+        $$ = node;
+    }
+    ;
+funcdec
+    :type ID LPAREN formalps RPAREN LBRACE statements RBRACE
+    {
+        TreeNode *node = new StmtNode("FUNCDEC", 1);
+        node->addson($1);
+        node->addson($2);
+        node->addson($4);
+        TreeNode *st = new StmtNode("FUNCST", 0);
+        st->addson($7);
+        node->addson(st);
+        $$ = node;
+    }
+    |type ID LPAREN RPAREN LBRACE statements RBRACE
+    {
+        TreeNode *node = new StmtNode("FUNCDEC", 1);
+        node->addson($1);
+        node->addson($2);
+        TreeNode *st = new StmtNode("FUNCST", 0);
+        st->addson($6);
+        node->addson(st);
+        $$ = node;
+    }
+    ;
+formalps
+    :formalp{$$ = $1;}
+    |formalp COMMA formalps{
+        $1->sibling = $3;
+        $$ = $1;
+    }
+formalp
+    :type ID{
+        TreeNode *node = new StmtNode("DECLARE", 0);
+        node->addson($1);
+        node->addson($2);
+        $$ = node;
+    }
 %%

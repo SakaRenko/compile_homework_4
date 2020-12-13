@@ -17,12 +17,12 @@ void TreeNode::addson(TreeNode * son)
     {
         if(endson == NULL)
         {
-            sons = endson = new LinkNode(son);
+            sons = endson = son;
         }
         else
         {
-            endson->next = new LinkNode(son);
-            endson = endson->next;
+            endson->sibling = son;
+            endson = endson->sibling;
         }
         son = son->sibling;
     }
@@ -30,11 +30,11 @@ void TreeNode::addson(TreeNode * son)
 
 void TreeNode::printsons()
 {
-    LinkNode * now = sons;
+    TreeNode * now = sons;
     while(now != NULL)
     {
-        cout<<now->node->nodenum<<",";
-        now = now->next;
+        cout<<now->nodenum<<",";
+        now = now->sibling;
     }
     cout<<endl;
 }
@@ -42,32 +42,31 @@ void TreeNode::printsons()
 void TreeNode::printAST()
 {
     this->printnode();
-    LinkNode * now = this->sons;
+    TreeNode * now = this->sons;
     while(now != NULL)
     {
-        now->node->printAST();
-        now = now->next;
+        now->printAST();
+        now = now->sibling;
     }
 }
 
 void VarNode::printnode()
 {
     cout<<nodenum<<"\t";
-    if(this->ifconst)
-    cout<<"Constant Variable\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
+    if(!ifarray)
+    {
+        if(this->ifconst)
+            cout<<"Constant Variable\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
+        else
+            cout<<"Variable\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
+    }
     else
-    cout<<"Variable\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
-    cout<<"\tChildren:";
-    this->printsons();
-}
-
-void ArrayNode::printnode()
-{
-    cout<<nodenum<<"\t";
-    if(this->ifconst)
-    cout<<"Constant Array\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
-    else
-    cout<<"Array\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
+    {
+        if(this->ifconst)
+            cout<<"Constant Array\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
+        else
+            cout<<"Array\t"<<"symbol:"<<this->name<<"\tnumbered as:"<<this->def;
+    }
     cout<<"\tChildren:";
     this->printsons();
 }
@@ -75,7 +74,7 @@ void ArrayNode::printnode()
 void TypeNode::printnode()
 {
     cout<<nodenum<<"\t";
-    cout<<"Type Indication\top:"<<this->type<<"\tChildren:";
+    cout<<"Type Indication\top:"<<this->t<<"\tChildren:";
     this->printsons();
 }
 
@@ -90,7 +89,7 @@ void ExprNode::printnode()
 void StmtNode::printnode()
 {
     cout<<nodenum<<"\t";
-    cout<<"Statement:"<<this->stmt<<"\tChildren";
+    cout<<"Statement:"<<this->stmt<<"\tChildren:";
     this->printsons();
 }
 

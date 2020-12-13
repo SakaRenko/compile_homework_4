@@ -11,27 +11,16 @@ class TreeNode
 {
     public:
     static int count;
-    class LinkNode
-    {
-        public:
-        TreeNode *node;
-        LinkNode *next;
-        LinkNode(TreeNode * x)
-        {
-            node = x;
-            next = NULL;
-        };
-    };
-        NodeType type;
-        int nodenum;
-        LinkNode * sons;
-        LinkNode * endson;
-        TreeNode * sibling;
-        TreeNode(NodeType type);
-        void addson(TreeNode * son);
-        virtual void printnode(){};
-        void printsons();
-        void printAST();
+    NodeType type;
+    int nodenum;
+    TreeNode * sons;
+    TreeNode * endson;
+    TreeNode * sibling;
+    TreeNode(NodeType type);
+    void addson(TreeNode * son);
+    virtual void printnode(){};
+    void printsons();
+    void printAST();
 };
 
 class field
@@ -53,11 +42,15 @@ class VarNode: public TreeNode
         string name;
         bool ifconst;
         int def;
+        bool ifarray;
+        int length;
         VarNode(string n, bool c):TreeNode(VAR)
         {
             name = n;
             ifconst = c;
             def = -1;
+            ifarray = false;
+            length = 1;
         };
         void printnode();
 };
@@ -97,20 +90,4 @@ class StmtNode: public TreeNode
         };
         void printnode();
 };
-
-class ArrayNode: public TreeNode
-{
-    public:
-        string name;
-        bool ifconst;
-        int def;
-        ArrayNode(string n, bool i):TreeNode(ARRAY)
-        {
-            name = n;
-            def = -1;
-            ifconst = i;
-        };
-        void printnode();
-};
-
 #endif

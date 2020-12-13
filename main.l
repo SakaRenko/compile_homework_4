@@ -39,7 +39,7 @@ linecommentelement .
 "char" return CHAR;
 "void" return VOID;
 
-"main" return MAIN;
+"struct" return STRUCT;
 
 
 "if" return IF;
@@ -79,6 +79,7 @@ linecommentelement .
 "]" return RBRACK;
 
 "," return COMMA;
+"." return POINT;
 
 
 {INTEGER} {
@@ -92,7 +93,9 @@ linecommentelement .
     return ID;
 }
 {STRING} {
-    TreeNode * node = new ArrayNode(yytext, 1);
+    VarNode * node = new VarNode(yytext, true);
+    node->ifarray = true;
+    node->length = node->name.length();
     yylval = node;
     return STRING;
 }
