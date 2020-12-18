@@ -5,14 +5,16 @@
 
 using namespace std;
 
-enum NodeType{TYPE, VAR, ARRAY, STMT, EXPR};
+enum NodeType{TYPE, VAR,  STMT, EXPR};
 
 class TreeNode
 {
     public:
     static int count;
+    static int line;
     NodeType type;
     int nodenum;
+    int lineno;
     TreeNode * sons;
     TreeNode * endson;
     TreeNode * sibling;
@@ -43,16 +45,19 @@ class VarNode: public TreeNode
         bool ifconst;
         int def;
         bool ifarray;
-        int length;
+        int length[10];
+        int dim;
         VarNode(string n, bool c):TreeNode(VAR)
         {
             name = n;
             ifconst = c;
             def = -1;
             ifarray = false;
-            length = 1;
+            length[0] = 1;
+            dim = 1;
         };
         void printnode();
+        void appenddim(int len);
 };
 
 class TypeNode: public TreeNode
@@ -86,7 +91,7 @@ class StmtNode: public TreeNode
         StmtNode(string s, bool f):TreeNode(STMT)
         {
             stmt = s;
-            newfield = newfield;
+            newfield = f;
         };
         void printnode();
 };

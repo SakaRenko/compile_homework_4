@@ -9,6 +9,7 @@ TreeNode::TreeNode(NodeType type)
     this->nodenum = TreeNode::count++;
     sons = endson = NULL;
     sibling = NULL;
+    lineno = TreeNode::line;
 }
 
 void TreeNode::addson(TreeNode * son)
@@ -48,6 +49,12 @@ void TreeNode::printAST()
         now->printAST();
         now = now->sibling;
     }
+}
+
+void VarNode::appenddim(int len)
+{
+    this->ifarray = true;
+    this->length[dim++] = len;
 }
 
 void VarNode::printnode()

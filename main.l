@@ -10,6 +10,7 @@ endcomment "*/"
 EOL (\r\n|\n)
 WHITE [\t ]
 STRING \"[^\"]*\"
+CHAR \'\'
 commentelement .|\n
 linecommentelement .
 %x COMMENT
@@ -25,12 +26,12 @@ linecommentelement .
 <LINECOMMENT>{EOL} {BEGIN INITIAL;}
 
 "true" {
-    TreeNode *node = new VarNode("1", 1);
+    TreeNode *node = new VarNode("true", 1);
     yylval = node;
     return TRUE;
 }
 "false" {
-    TreeNode *node = new VarNode("0", 1);
+    TreeNode *node = new VarNode("false", 1);
     yylval = node;
     return FALSE;
 }
@@ -38,6 +39,7 @@ linecommentelement .
 "int" return INT;
 "char" return CHAR;
 "void" return VOID;
+"bool" return BOOL;
 
 "struct" return STRUCT;
 
@@ -48,8 +50,11 @@ linecommentelement .
 "for" return FOR;
 "return" return RETURN;
 
-"printf" return PRINTF;
-"scanf" return SCANF;
+"cin" return CIN;
+"cout" return COUT;
+
+"<<" return LM;
+">>" return RM;
 
 "=" return ASSIGN;
 "-=" return MASSIGN;
@@ -69,6 +74,7 @@ linecommentelement .
 ">" return MORE;
 "<=" return LESSE;
 ">=" return MOREE;
+"!=" return NEQUAL;
 
 ";" return SEMICOLON;
 "(" return LPAREN;
@@ -80,6 +86,8 @@ linecommentelement .
 
 "," return COMMA;
 "." return POINT;
+
+{EOL} {TreeNode::line++;}
 
 
 {INTEGER} {
@@ -95,9 +103,14 @@ linecommentelement .
 {STRING} {
     VarNode * node = new VarNode(yytext, true);
     node->ifarray = true;
-    node->length = node->name.length();
+    node->length[0] = node->name.length();
     yylval = node;
-    return STRING;
+    return ID;
+}
+{CHAR} {
+    VarNode * node = new VarNode(yytext, true);
+    yylval = node;
+    return ID;
 }
 {EOL}
 {WHITE}
