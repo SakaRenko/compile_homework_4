@@ -39,8 +39,6 @@ linecommentelement .
 "int" return INT;
 "char" return CHAR;
 "void" return VOID;
-"bool" return BOOL;
-
 "struct" return STRUCT;
 
 

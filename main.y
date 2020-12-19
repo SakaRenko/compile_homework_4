@@ -89,7 +89,7 @@ if_else
     }
     ;
 while
-    : WHILE LPAREN bool_expr RPAREN fieldstatement {
+    : WHILE LPAREN all_expr RPAREN fieldstatement {
         TreeNode *node=new StmtNode("WHILE", 0);
         node->addson($3);
         node->addson($5);
@@ -97,7 +97,7 @@ while
     }
     ;
 for
-    : FOR LPAREN instruction SEMICOLON bool_expr SEMICOLON instruction RPAREN fieldstatement{
+    : FOR LPAREN notdeinstruction SEMICOLON all_expr SEMICOLON notdeinstruction RPAREN fieldstatement{
         TreeNode *node = new StmtNode("FOR", 0);
         node->addson($3);
         node->addson($5);
@@ -148,7 +148,7 @@ notdeinstruction
         node->addson($3);
         $$=node;  
     }
-    |lval ASSIGN bool_expr {
+    |lval ASSIGN all_expr {
         TreeNode *node=new ExprNode("=");
         node->addson($1);
         node->addson($3);
@@ -157,13 +157,7 @@ notdeinstruction
     | lval {$$ = $1;}
     ;
 instruction
-    : ID ASSIGN expr {
-        TreeNode *node=new ExprNode("=");
-        node->addson($1);
-        node->addson($3);
-        $$=node;  
-    }
-    | ID ASSIGN bool_expr{
+    : ID ASSIGN all_expr {
         TreeNode *node=new ExprNode("=");
         node->addson($1);
         node->addson($3);
@@ -206,10 +200,13 @@ printf
         $$=node;
     }
     ;
+all_expr
+    : bool_expr {$$=$1;}
+    | expr{$$=$1;}
+    ;
 bool_expr
     : TRUE {$$=$1;}
     | FALSE {$$=$1;}
-    | lval {$$=$1;}
     | LPAREN bool_expr RPAREN
     {
         $$ = $2;
@@ -287,8 +284,8 @@ lval
     }
     ;
 realp
-    : expr{$$=$1;}
-    | expr COMMA realp{
+    : all_expr{$$=$1;}
+    | all_expr COMMA realp{
         $1->sibling = $3;
         $$ = $1;
     }
@@ -364,10 +361,6 @@ type
     | CHAR {
         TreeNode *node=new TypeNode("char");
         $$=node;        
-    }
-    | BOOL {
-        TreeNode *node=new TypeNode("bool");
-        $$=node;    
     }
     | STRUCT ID{
         VarNode * var = (VarNode *)$2;
@@ -445,7 +438,7 @@ formalps
     }
 formalp
     :type ID{
-        TreeNode *node = new StmtNode("DECLARE", 0);
+        TreeNode *node = new StmtNode("DECLAREP", 0);
         node->addson($1);
         node->addson($2);
         $$ = node;

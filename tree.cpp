@@ -10,6 +10,8 @@ TreeNode::TreeNode(NodeType type)
     sons = endson = NULL;
     sibling = NULL;
     lineno = TreeNode::line;
+    truelabel = falselabel = nextlabel = beginlabel = -1;
+    valuetype = MyType();
 }
 
 void TreeNode::addson(TreeNode * son)
@@ -89,7 +91,7 @@ void TypeNode::printnode()
 void ExprNode::printnode()
 {
     cout<<nodenum<<"\t";
-    cout<<"Expression\top:"<<this->op<<"\tChildren:";
+    cout<<"Expression\top:"<<this->op<<" "<<this->offset<<" "<<"\tChildren:";
     this->printsons();
 }
 

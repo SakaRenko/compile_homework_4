@@ -2,8 +2,71 @@
 #define TREE_H
 
 #include<string>
+#include<iostream>
 
 using namespace std;
+
+
+struct MyType
+{
+    string name;
+    bool isarray;
+    int len[10];
+    int dim;
+    MyType(string name, int len, bool isarray)
+    {
+        this->name = name;
+        this->len[0] = len;
+        this->dim = 1;
+        this->isarray = isarray;
+    }
+    MyType(string name, int * len, int dim, bool isarray)
+    {
+        this->name = name;
+        this->dim = dim;
+        for(int i = 0; i < dim; i++)
+            this->len[i] = len[i];
+        this->isarray = isarray;
+    }
+    MyType()
+    {
+        this->name = "";
+        this->len[0] = 0;
+        this->dim = 1;
+        this->isarray = false;
+    }
+    void appenddim(int l)
+    {
+        this->len[dim++] = l;
+    }
+    bool operator==(const MyType& tar)
+    {
+        if(this->name != tar.name || this->isarray != tar.isarray || this->dim != tar.dim)
+            return false;
+        for(int i = 0; i < this->dim; i++)
+            if(this->len[i] != tar.len[i])
+                return false;
+        return true;
+    }
+    bool operator!=(const MyType& tar)
+    {
+        return !(*this == tar);
+    }
+    int calsize()
+    {
+        int base = 0;
+        if(name == "int")
+            base = 4;
+        else if(name == "char" || name == "bool")
+            base == 1;
+        else if(name == "") return 0;
+        else return -1;
+        int num = 1;
+        for(int i = 0; i < dim; i++)
+            num *= len[i];
+        return base * num;
+    }
+};
 
 enum NodeType{TYPE, VAR,  STMT, EXPR};
 
@@ -18,6 +81,9 @@ class TreeNode
     TreeNode * sons;
     TreeNode * endson;
     TreeNode * sibling;
+    MyType valuetype;
+    int nextlabel, beginlabel;
+    int truelabel, falselabel;
     TreeNode(NodeType type);
     void addson(TreeNode * son);
     virtual void printnode(){};
@@ -76,8 +142,10 @@ class ExprNode: public TreeNode
 {
     public:
         string op;
+        int offset;
         ExprNode(string o):TreeNode(EXPR)
         {
+            offset = 1;
             op = o;
         };
         void printnode();
