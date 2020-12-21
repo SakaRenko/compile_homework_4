@@ -11,6 +11,7 @@ TreeNode::TreeNode(NodeType type)
     sibling = NULL;
     lineno = TreeNode::line;
     truelabel = falselabel = nextlabel = beginlabel = -1;
+    nextfalse = nexttrue = false;
     valuetype = MyType();
 }
 

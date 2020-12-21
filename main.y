@@ -8,7 +8,7 @@
 
 %start program
 
-%token ID INTEGER STRING
+%token ID INTEGER STRING CHARA
 %token IF ELSE WHILE FOR RETURN
 %token CHAR INT VOID BOOL
 %token COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK SEMICOLON
@@ -16,7 +16,7 @@
 %token ASSIGN
 %token ADD MINUS TIMES DEVIDE MOD
 %token NOT AND OR EQUAL NEQUAL LESS MORE LESSE MOREE
-%token CIN COUT RM LM
+%token SCANF PRINTF
 %token UMINUS UADD
 %token MASSIGN AASSIGN
 %token STRUCT
@@ -130,19 +130,8 @@ instructions
     | instruction {$$ = $1;}
     ;
 notdeinstruction
-    :lval MASSIGN expr {
-        TreeNode *node=new ExprNode("-=");
-        node->addson($1);
-        node->addson($3);
-        $$=node;  
-    }
-    | lval AASSIGN expr {
-        TreeNode *node=new ExprNode("+=");
-        node->addson($1);
-        node->addson($3);
-        $$=node;  
-    }
-    |lval ASSIGN expr {
+    :
+    lval ASSIGN expr {
         TreeNode *node=new ExprNode("=");
         node->addson($1);
         node->addson($3);
@@ -181,21 +170,36 @@ array
         $$ = i;
     }
     ;
-string
-    : STRING {
-        $$=$1;
-    }
+exprs
+    : expr COMMA exprs{$1->sibling = $3;$$=$1;}
+    | expr{$$=$1;} 
     ;
-scanf
-    : CIN RM lval {
-        TreeNode *node=new StmtNode("cin", 0);
+lvals 
+    : lval{$$=$1;}
+    | lval COMMA lvals{$1->sibling = $3; $$=$1;}
+    ;
+printf
+    : PRINTF LPAREN STRING COMMA exprs RPAREN {
+        TreeNode *node=new StmtNode("printf", 0);
+        node->addson($3);
+        node->addson($5);
+        $$=node;
+    }
+    | PRINTF LPAREN STRING RPAREN {
+        TreeNode *node=new StmtNode("printf", 0);
         node->addson($3);
         $$=node;
     }
     ;
-printf
-    : COUT LM ID {
-        TreeNode *node=new StmtNode("cout", 0);
+scanf
+    : SCANF LPAREN STRING COMMA lvals RPAREN {
+        TreeNode *node=new StmtNode("scanf", 0);
+        node->addson($3);
+        node->addson($5);
+        $$=node;
+    }
+    | SCANF LPAREN STRING RPAREN {
+        TreeNode *node=new StmtNode("scanf", 0);
         node->addson($3);
         $$=node;
     }
@@ -292,7 +296,7 @@ realp
 expr
     : lval {$$=$1;}
     | INTEGER {$$=$1;}
-    | CHAR {$$=$1;}
+    | CHARA{$$=$1;}
     | ID LPAREN realp RPAREN{
         VarNode * i = (VarNode *)$1;
         TreeNode *node = new ExprNode(i->name);

@@ -10,7 +10,7 @@ endcomment "*/"
 EOL (\r\n|\n)
 WHITE [\t ]
 STRING \"[^\"]*\"
-CHAR \'\'
+CHARA \'.\'
 commentelement .|\n
 linecommentelement .
 %x COMMENT
@@ -48,15 +48,10 @@ linecommentelement .
 "for" return FOR;
 "return" return RETURN;
 
-"cin" return CIN;
-"cout" return COUT;
-
-"<<" return LM;
-">>" return RM;
+"scanf" return SCANF;
+"printf" return PRINTF;
 
 "=" return ASSIGN;
-"-=" return MASSIGN;
-"+=" return AASSIGN;
 
 "+" return ADD;
 "-" return MINUS;
@@ -103,12 +98,12 @@ linecommentelement .
     node->ifarray = true;
     node->length[0] = node->name.length();
     yylval = node;
-    return ID;
+    return STRING;
 }
-{CHAR} {
+{CHARA} {
     VarNode * node = new VarNode(yytext, true);
     yylval = node;
-    return ID;
+    return CHARA;
 }
 {EOL}
 {WHITE}

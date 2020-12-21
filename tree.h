@@ -57,8 +57,8 @@ struct MyType
         int base = 0;
         if(name == "int")
             base = 4;
-        else if(name == "char" || name == "bool")
-            base == 1;
+        else if(name == "char")
+            base = 1;
         else if(name == "") return 0;
         else return -1;
         int num = 1;
@@ -84,6 +84,7 @@ class TreeNode
     MyType valuetype;
     int nextlabel, beginlabel;
     int truelabel, falselabel;
+    bool nexttrue, nextfalse;
     TreeNode(NodeType type);
     void addson(TreeNode * son);
     virtual void printnode(){};
