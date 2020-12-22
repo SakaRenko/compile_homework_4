@@ -399,7 +399,7 @@ bool checkreturn(MyType retype, TreeNode *funcdec)
             bool havereturn = false;
             while(tnode != NULL)
             {
-                havereturn |= checkreturn(retype, tnode);
+                havereturn = havereturn || checkreturn(retype, tnode);
                 tnode = tnode->sibling;
             }
             return havereturn;
@@ -658,9 +658,17 @@ MyType typecheck(TreeNode *node)
             {
                 tnode = node->sons;
                 temp[0] = typecheck(tnode);
-                if((temp[0].name != "int" && temp[0].name != "char") || (temp[0].isarray && (temp[0].name != "char" || temp[0].dim > 1)))
+                if((temp[0].isarray && (temp[0].name != "char" || temp[0].dim > 1)))
                 {
                     TypeError("printf invalid ", stmt);
+                }
+                tnode = tnode->sibling;
+                while(tnode)
+                {
+                    temp[0] = typecheck(tnode);
+                    if(temp[0].name != "int" && temp[0].name != "char")
+                        TypeError("printf invalid ", stmt);
+                    tnode = tnode->sibling;
                 }
                 return MyType();
             }
@@ -668,11 +676,18 @@ MyType typecheck(TreeNode *node)
             {
                 tnode = node->sons;
                 temp[0] = typecheck(tnode);
-                if((temp[0].name != "int" && temp[0].name != "char") || (temp[0].isarray && (temp[0].name != "char" || temp[0].dim > 1)))
-                {
-                    TypeError("scanf invalid ", stmt);
-                }
                 tnode = tnode->sibling;
+                if((temp[0].isarray && (temp[0].name != "char" || temp[0].dim > 1)))
+                {
+                    TypeError("printf invalid ", stmt);
+                }
+                while(tnode)
+                {
+                    temp[0] = typecheck(tnode);
+                    if(temp[0].name != "int" && temp[0].name != "char")
+                        TypeError("printf invalid ", stmt);
+                    tnode = tnode->sibling;
+                }
                 return MyType();
             }
             else if(stmt->stmt == "DECLARE MEMBERS")
@@ -966,10 +981,11 @@ int pushptr(ofstream &fout, TreeNode *node)
     return size + 4;
 }
 
-int pushval(ofstream &fout, TreeNode *node)
+int pushval(ofstream &fout, TreeNode *node, bool setprintf = false)
 {
     if(!node) return 0;
-    int size = pushval(fout, node->sibling);
+    int size = pushval(fout, node->sibling, setprintf);
+    bool ifchar = false;
     if(node->type == VAR)
     {
         VarNode * var = (VarNode *)node;
@@ -981,11 +997,17 @@ int pushval(ofstream &fout, TreeNode *node)
         if(var->ifconst)
         {
             if(var->name[0] == '\'')
+            {
                 fout<<"movl $"<<(unsigned int)(var->name[1])<<" ,%eax"<<endl;
+                ifchar = true;
+            }
             else fout<<"movl $"<<stoi(var->name)<<" ,%eax"<<endl;
         }
         else if(signlist[var->def].type == MyType("char", 1, false))
+        {
             fout<<"movzbl "<<signlist[var->def].offset<<"(%ebp), %eax"<<endl;
+            ifchar = true;
+        }
         else fout<<"movl "<<signlist[var->def].offset<<"(%ebp), %eax"<<endl;
     }
     else if(node->type == EXPR)
@@ -998,7 +1020,13 @@ int pushval(ofstream &fout, TreeNode *node)
         }
         else fout<<"movl "<<expr2->offset<<"(%ebp), %eax"<<endl;
     }
-    fout<<"pushl %eax"<<endl;
+    if(ifchar && !setprintf)
+    {
+        fout<<"subl $1, %esp"<<endl;
+        fout<<"movb %al, 0(%esp)"<<endl;
+        return size + 1;
+    }
+    else fout<<"pushl %eax"<<endl;
     return size + 4;
 }
 
@@ -1072,7 +1100,7 @@ void stmt_gen_code(ofstream &fout, StmtNode * stmt)
             recursive_gen_code(fout, temp);
             temp = temp->sibling;
         }
-        int size = pushval(fout, now);
+        int size = pushval(fout, now, true);
         fout<<"call printf"<<endl;
         fout<<"addl $"<<size<<", %esp"<<endl;
     }
@@ -1341,6 +1369,7 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
             }
             else fout<<"movl "<<expr2->offset<<"(%ebp), %ebx"<<endl;
         }
+        // cout<<op1type.name<<" "<<caltypesize(op1type)<<endl;
         fout<<"imull $"<<caltypesize(op1type)<<", %ebx, %ebx"<<endl;
         fout<<"subl %ebx, %eax"<<endl;
         fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
