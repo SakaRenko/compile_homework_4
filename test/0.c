@@ -8,11 +8,11 @@ struct ans
     int a[5][3];
 };
 
-int good(char aa, int bb)
+void good(char aa, int bb)
 {
     printf("%c, %d\n", aa, bb);
     int d = bb;
-    return d;
+    return 0;
 }
 
 int main() {
@@ -32,7 +32,7 @@ if(a.a[0][1] > 0)
     printf("good! then\n");
 a.a[0][1] = a.a[0][1] - 1;
 printf("result is: %d\n", c.a[0][1]);
-s = good('a', 2);
+good('a', 2);
 int i;
 int b = 10;
 for(i=0; i<b; i = i + 1) {

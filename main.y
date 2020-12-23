@@ -59,6 +59,10 @@ statement
         node->addson($2);
         $$=node;
     }
+    | RETURN SEMICOLON {
+        TreeNode *node = new StmtNode("RETURN", false);
+        $$=node;
+    }
     | SEMICOLON {}
     ;
 fieldstatement
@@ -74,13 +78,13 @@ fieldstatement
     }
     ;
 if_else
-    : IF LPAREN bool_expr RPAREN fieldstatement %prec LOWER_THEN_ELSE {
+    : IF LPAREN all_expr RPAREN fieldstatement %prec LOWER_THEN_ELSE {
         TreeNode *node=new StmtNode("IF_ELSE", 0);
         node->addson($3);
         node->addson($5);
         $$=node;
     }
-    | IF LPAREN bool_expr RPAREN fieldstatement ELSE fieldstatement {
+    | IF LPAREN all_expr RPAREN fieldstatement ELSE fieldstatement {
         TreeNode *node=new StmtNode("IF_ELSE", 0);
         node->addson($3);
         node->addson($5);
@@ -131,18 +135,13 @@ instructions
     ;
 notdeinstruction
     :
-    lval ASSIGN expr {
+    lval ASSIGN all_expr {
         TreeNode *node=new ExprNode("=");
         node->addson($1);
         node->addson($3);
         $$=node;  
     }
-    |lval ASSIGN all_expr {
-        TreeNode *node=new ExprNode("=");
-        node->addson($1);
-        node->addson($3);
-        $$=node;  
-    }
+    | all_expr{$$ = $1;}
     | lval {$$ = $1;}
     ;
 instruction
@@ -209,9 +208,8 @@ all_expr
     | expr{$$=$1;}
     ;
 bool_expr
-    : TRUE {$$=$1;}
-    | FALSE {$$=$1;}
-    | LPAREN bool_expr RPAREN
+    : 
+     LPAREN bool_expr RPAREN
     {
         $$ = $2;
     }
@@ -359,7 +357,7 @@ type
         $$=node; 
     }
     | VOID {
-        TreeNode *node=new TypeNode("void");
+        TreeNode *node=new TypeNode("");
         $$=node;        
     }
     | CHAR {

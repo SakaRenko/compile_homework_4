@@ -18,12 +18,12 @@ linecommentelement .
 %%
 
 "/*" BEGIN COMMENT;
-<COMMENT>{commentelement} 
+<COMMENT>{commentelement} {if(yytext[0] == '\n') TreeNode::line++;}
 <COMMENT>{endcomment} {BEGIN INITIAL;}
 
 "//" BEGIN LINECOMMENT;
 <LINECOMMENT>{linecommentelement} 
-<LINECOMMENT>{EOL} {BEGIN INITIAL;}
+<LINECOMMENT>{EOL} {BEGIN INITIAL;TreeNode::line++;}
 
 "true" {
     TreeNode *node = new VarNode("true", 1);

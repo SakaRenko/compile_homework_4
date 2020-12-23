@@ -10,7 +10,7 @@
 using std::cout;
 using std::endl;
 int TreeNode::count = 0;
-int TreeNode::line = 0;
+int TreeNode::line = 1;
 TreeNode *root=nullptr;
 field * rootf = new field();
 
@@ -393,18 +393,15 @@ bool checkreturn(MyType retype, TreeNode *funcdec)
             }
             return true;
         }
-        else
-        {
-            TreeNode *tnode = funcdec->sons;
-            bool havereturn = false;
-            while(tnode != NULL)
-            {
-                havereturn = havereturn || checkreturn(retype, tnode);
-                tnode = tnode->sibling;
-            }
-            return havereturn;
-        }
     }
+    TreeNode *tnode = funcdec->sons;
+    bool havereturn = false;
+    while(tnode != NULL)
+    {
+        havereturn = havereturn || checkreturn(retype, tnode);
+        tnode = tnode->sibling;
+    }
+    return havereturn;
 }
 
 
@@ -1121,7 +1118,13 @@ void stmt_gen_code(ofstream &fout, StmtNode * stmt)
     else if(stmt->stmt == "RETURN")
     {
         recursive_gen_code(fout, stmt->sons);
-        if(stmt->sons->type == EXPR)
+        if(!stmt->sons)
+        {
+            fout<<"movl %ebp, %esp"<<endl;
+            fout<<"popl %ebp"<<endl;
+            fout<<"ret"<<endl;
+        }
+        else if(stmt->sons->type == EXPR)
         {
             ExprNode * expr = (ExprNode *)(stmt->sons);
             fout<<"movl "<<expr->offset<<"(%ebp), %eax"<<endl;
@@ -1173,7 +1176,8 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
         fout<<"addl $"<<size<<", %esp"<<endl;
         if(expr->valuetype == MyType("char", 1, false))
             fout<<"movb %al, "<<expr->offset<<"(%ebp)"<<endl;
-        else fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
+        else if(!(expr->valuetype == MyType())) 
+            fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
         return;
     }
     recursive_gen_code(fout, expr->sons);
