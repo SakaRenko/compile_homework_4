@@ -76,11 +76,11 @@ bool addsign(string name, field *cur, MyType type, bool parameter)
     }
     else 
     {
-        signlist[signcount].offset = -funcsize[countfunc - 1] - 4;
         int s = caltypesize(type);
         if(s == -1)
             return false;
         funcsize[countfunc - 1] += s;
+        signlist[signcount].offset = -funcsize[countfunc - 1];
         tempfuncsize[countfunc - 1] = funcsize[countfunc - 1];
     }
     signcount++;
@@ -916,17 +916,17 @@ int caltempoff(TreeNode *node, int nowfunc)
                 tempfuncsize[nowfunc] -= 4;
             if(op2 && op2->type == EXPR)
                 tempfuncsize[nowfunc] -= 4;
-            expr->offset = -tempfuncsize[nowfunc] - 4;
             if(expr->op != "=")
                 tempfuncsize[nowfunc] += 4;
+            expr->offset = -tempfuncsize[nowfunc];
         } 
     }
     else if(isconst(node))
     {
         VarNode * var = (VarNode *)node;
         if(ifstring(var)) return 0;
-        var->def = -tempfuncsize[nowfunc] - 4;
         tempfuncsize[nowfunc] += 4;
+        var->def = -tempfuncsize[nowfunc];
     }
 }
 
@@ -1133,7 +1133,11 @@ void stmt_gen_code(ofstream &fout, StmtNode * stmt)
         {
             VarNode * var = (VarNode *)(stmt->sons);
             if(!var->ifconst)
-                fout<<"movl "<<signlist[var->def].offset<<"(%ebp), %eax"<<endl;
+            {
+                if(signlist[var->def].type == MyType("char", 1, false))
+                    fout<<"movzbl "<<signlist[var->def].offset<<"(%ebp), %eax"<<endl;
+                else fout<<"movl "<<signlist[var->def].offset<<"(%ebp), %eax"<<endl;
+            }
             else if(var->name[0] == '\'')
                     fout<<"movl $"<<(unsigned int)(var->name[1])<<" ,%eax"<<endl;
                 else fout<<"movl $"<<stoi(var->name)<<" ,%eax"<<endl;
@@ -1167,7 +1171,9 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
         int size = pushval(fout, now);
         fout<<"call "<<expr->op<<endl;
         fout<<"addl $"<<size<<", %esp"<<endl;
-        fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
+        if(expr->valuetype == MyType("char", 1, false))
+            fout<<"movb %al, "<<expr->offset<<"(%ebp)"<<endl;
+        else fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
         return;
     }
     recursive_gen_code(fout, expr->sons);
@@ -1330,7 +1336,7 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
         }
         VarNode *name = (VarNode *)op2;
         // cout<<calmemoff(name->name, i)<<endl;
-        fout<<"subl $"<<calmemoff(name->name, i)<<", %eax"<<endl;
+        fout<<"addl $"<<calmemoff(name->name, i)<<", %eax"<<endl;
         fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
     }
     else if(expr->op == "[]")
@@ -1371,7 +1377,7 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
         }
         // cout<<op1type.name<<" "<<caltypesize(op1type)<<endl;
         fout<<"imull $"<<caltypesize(op1type)<<", %ebx, %ebx"<<endl;
-        fout<<"subl %ebx, %eax"<<endl;
+        fout<<"addl %ebx, %eax"<<endl;
         fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl;
     }
     else if(expr->op == "=")
@@ -1423,14 +1429,14 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
         while(size >= 4)
         {
             size -= 4;
-            fout<<"movl "<<-size<<"(%ebx), %ecx"<<endl;
-            fout<<"movl %ecx, "<<-size<<"(%eax)"<<endl;
+            fout<<"movl "<<size<<"(%ebx), %ecx"<<endl;
+            fout<<"movl %ecx, "<<size<<"(%eax)"<<endl;
         }
         while(size >= 1)
         {
             size -= 1;
-            fout<<"movb "<<-size<<"(%ebx), %cl"<<endl;
-            fout<<"movb %cl, "<<-size<<"(%eax)"<<endl;
+            fout<<"movb "<<size<<"(%ebx), %cl"<<endl;
+            fout<<"movb %cl, "<<size<<"(%eax)"<<endl;
         }
     }
 }
