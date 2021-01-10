@@ -1266,12 +1266,12 @@ void expr_gen_code(ofstream &fout, ExprNode * expr)
         }
         else if(expr->op == "/")
         {
-            fout<<"movl $0, %edx"<<endl<<"idivl %ebx"<<endl;
+            fout<<"cdq"<<endl<<"idivl %ebx"<<endl;
             fout<<"movl %eax, "<<expr->offset<<"(%ebp)"<<endl; 
         }
         else if(expr->op == "%")
         {
-            fout<<"movl $0, %edx"<<endl<<"idivl %ebx"<<endl;
+            fout<<"cdq"<<endl<<"idivl %ebx"<<endl;
             fout<<"movl %edx, "<<expr->offset<<"(%ebp)"<<endl; 
         }
         else if(expr->op == ">")
